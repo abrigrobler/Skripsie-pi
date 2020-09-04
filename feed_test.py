@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import imutils
 
-vid = cv2.VideoCapture('rtsp://abrig:choppur22@192.168.8.107:88/videoMain')
+vid = cv2.VideoCapture('rtsp://abrig:choppur22@192.168.8.130:88/videoMain')
 vid2 = cv2.VideoCapture(0)
 
 while(True):
