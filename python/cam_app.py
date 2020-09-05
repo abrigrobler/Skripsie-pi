@@ -51,7 +51,7 @@ def open_stream(ip):
 
 		if ret:
 
-			img = imutils.resize(img, width=900)
+			#img = imutils.resize(img, width=900)
 			cv2.imshow('Foscam_01', img)
 			#print("[WARNING] Feed not available")
 		else:
@@ -94,7 +94,10 @@ while(True):
 		with open(filepath + "saved_cameras.txt", "a") as cam_file:
 			cam_file.write(cam_name + ', ' + cam_user + ':' + cam_pass + '@' + cam_ip + '\n')
 
-		open_stream(stream)
+		print("\nWould you like to view the stream for this camera? Type \'yes\' to view, type anything else to abort\n")
+
+		if input('') == 'yes':
+			open_stream(stream)
 
 	elif choice == 'L':
 
