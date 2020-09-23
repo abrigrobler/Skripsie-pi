@@ -22,17 +22,18 @@ window.title("Skripsie 2020")
 
 # Window variables
 filepath = '../bin/'
-has_stream = False
 calibrated = True
-
-# Functions
-
-default_stream = Stream()
+stream = ''
+default_stream = Stream(src = '0', camera_brand = '')
 
 def show_frame():
 	ret, frame = default_stream.get_stream().read()
+	width  = default_stream.get_stream().get(cv2.CAP_PROP_FRAME_WIDTH)  # float
+	height = default_stream.get_stream().get(cv2.CAP_PROP_FRAME_HEIGHT) # float
+	div_factor = 2
 	if ret:
-		frame = cv2.flip(frame, 1)
+		#frame = cv2.flip(frame, 1)
+		frame = cv2.resize(frame, (int(width/div_factor),int(height/div_factor)))
 		cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
 		img = PIL.Image.fromarray(cv2image)
 		imgtk = ImageTk.PhotoImage(image=img)
@@ -40,6 +41,7 @@ def show_frame():
 		video_stream.configure(image=imgtk)
 		video_stream.after(10, show_frame)
 		lbl_default.config(text = '')
+		#cv2.imshow('Live stream', cv2image)
 	else:
 		lbl_default.config(text = '[ERROR] No stream to show. Please make sure that you have selected a camera to stream. If the error persists, idk.')
 
@@ -70,15 +72,14 @@ def show_cameras():
 	cam_window.title("Select a stream")
 
 	for cam in cam_list:
-		tkinter.Button(cam_window, text=cam[0], command = lambda: update_stream(cam_window, cam[1])).pack()
+		tkinter.Button(cam_window, text=cam[0], command = lambda cam = cam[1]: update_stream(cam_window, cam)).pack()
 
-def update_stream(window, src):
-	if src == '0':
-		default_stream = Stream(src = 0)
-	else:
-		default_stream = Stream(src = src)
-	has_stream = True
+def update_stream(window, source):
+	global default_stream
+	default_stream  = Stream(src = source, camera_brand = 'Foscam')
 	window.destroy()
+
+
 # Window elements
 
 # Labels
