@@ -63,7 +63,7 @@ def show_frame():
 		lbl_default.config(text = '')
 		#cv2.imshow('Live stream', cv2image)
 	else:
-		video_stream.config(text = '[ERROR] No stream to show. Please make sure that you have selected a camera to stream. If the error persists, idk.')
+		video_stream.config(text = '[ERROR - GUI] No stream to show. Please make sure that you have selected a camera to stream. If the error persists, idk.')
 
 def show_cameras():
 	'''

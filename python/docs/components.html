@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>components.py</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>components.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">-----------------------------------------------</span>
+<span class="sd">title: components.py</span>
+<span class="sd">description: Classes created for use in the GUI.py app, in order to hold all reusable methods and classes which clutter up the other scripts</span>
+<span class="sd">author: AF Grobler</span>
+<span class="sd">for: Project (E) 448, Department of Electric and Electronic Engineering, University of Stellenbosch</span>
+<span class="sd">-----------------------------------------------</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">PIL</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageTk</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">imutils</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h3><span id="stream" href="stream"> STREAM </span></h3>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <pre><code>The stream object is used to check the validity of RTSP sources, and also to actually create and view a stream in GUI.py
+cap - cv2 video capture object
+src - defines the source (rtsp string) of the video capture object
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">class</span> <span class="nc">Stream</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">()</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+		<span class="k">global</span> <span class="n">cap</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
+
+		<span class="k">if</span> <span class="n">src</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span> <span class="ow">or</span> <span class="n">src</span> <span class="o">==</span> <span class="s1">&#39;:@0:&#39;</span><span class="p">:</span> <span class="c1">#Enable webcam support</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">rtsp_string</span> <span class="o">=</span> <span class="s1">&#39;rtsp://&#39;</span> <span class="o">+</span> <span class="n">src</span> <span class="o">+</span> <span class="s1">&#39;/videoMain&#39;</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">cap</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">rtsp_string</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="nf">get_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+			<span class="k">return</span> <span class="kc">False</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <h3><span id="motion-detector" href="motion-detector"> MOTION DETECTOR </span></h3>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <pre><code>This class will hold a single stream, and perform background subtraction on the stream. Images on which motion are detected will be saved.
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">class</span> <span class="nc">MotionDetector</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">min_area</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">500</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">Stream</span> <span class="o">=</span> <span class="n">stream</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="n">filepath</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">min_area</span> <span class="o">=</span> <span class="n">min_area</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">fg_detect</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">createBackgroundSubtractorKNN</span><span class="p">()</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <pre><code>    This method will be called in a while loop in another script. Therefore, it will only apply to a single frame.
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="nf">process_single_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Stream</span><span class="o">.</span><span class="n">get_stream</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span> <span class="c1">#Check that a frame is availible</span>
+			<span class="k">return</span>
+
+		<span class="n">frame</span> <span class="o">=</span> <span class="n">imutils</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+		<span class="n">fg_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fg_detect</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+		<span class="n">cnts</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">findContours</span><span class="p">(</span><span class="n">fg_mask</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">cv2</span><span class="o">.</span><span class="n">RETR_EXTERNAL</span><span class="p">,</span>
+			<span class="n">cv2</span><span class="o">.</span><span class="n">CHAIN_APPROX_SIMPLE</span><span class="p">)</span>
+		<span class="n">cnts</span> <span class="o">=</span> <span class="n">imutils</span><span class="o">.</span><span class="n">grab_contours</span><span class="p">(</span><span class="n">cnts</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>loop over the contours</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cnts</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>if the contour is too small, ignore it</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>			<span class="k">if</span> <span class="n">cv2</span><span class="o">.</span><span class="n">contourArea</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_area</span><span class="p">:</span>
+				<span class="k">continue</span>
+
+			<span class="n">img_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; - &quot;</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%A </span><span class="si">%d</span><span class="s2"> %B %Y %I:%M:%S%p&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.jpg&#39;</span>
+			<span class="n">cv2</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">img_name</span><span class="p">,</span> <span class="n">frame</span><span class="p">)</span> <span class="c1">#Saving</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - MotionDetector] Motion detected on &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;, frame saved&quot;</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">class</span> <span class="nc">CameraManager</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <pre><code>    Reads the saved camera information from a .pickle file, and returns a list containing the information.
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="nf">list_cameras</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="n">cam_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">):</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] No saved cameras exist on this device yet&quot;</span><span class="p">)</span>
+			<span class="k">return</span> <span class="kc">False</span>
+
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] Fetching saved cameras&quot;</span><span class="p">)</span>
+		<span class="n">cam_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+		<span class="k">for</span> <span class="n">cam</span> <span class="ow">in</span> <span class="n">cam_dict</span><span class="p">:</span>
+			<span class="n">cam_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">cam</span><span class="p">,</span> <span class="n">cam_dict</span><span class="p">[</span><span class="n">cam</span><span class="p">]])</span>
+
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+		<span class="k">return</span> <span class="n">cam_list</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-17'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-17'>#</a>
+      </div>
+      <pre><code>    Writes the info of a new camera to the file. Also performs a check for file existence, and rejects duplicates
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="nf">save_camera</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-18'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-18'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">):</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] Creating save file&quot;</span><span class="p">)</span>
+			<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+			<span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({},</span> <span class="n">f</span><span class="p">)</span>
+			<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+
+		<span class="n">cam_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">cam</span> <span class="ow">in</span> <span class="n">cam_dict</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">cam_dict</span><span class="p">[</span><span class="n">cam</span><span class="p">]</span> <span class="o">==</span> <span class="n">src</span><span class="p">:</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[ERROR - CameraManager] A camera with this source has already been added. Rejecting duplicate&quot;</span><span class="p">)</span>
+				<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+				<span class="n">window</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+				<span class="k">return</span>
+
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] Saving current camera&quot;</span><span class="p">)</span>
+		<span class="n">cam_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="p">{</span><span class="n">name</span> <span class="p">:</span> <span class="n">src</span><span class="p">})</span>
+
+		<span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cam_dict</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] Camera saved&quot;</span><span class="p">)</span>
+
+		<span class="n">window</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+		<span class="k">return</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-19'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-19'>#</a>
+      </div>
+      <pre><code>    Deletes a named camera from the saved file
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>	<span class="k">def</span> <span class="nf">delete_camera</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-20'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-20'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>		<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">):</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] No saved cameras exist on this device yet&quot;</span><span class="p">)</span>
+			<span class="k">return</span>
+
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] Fetching saved cameras&quot;</span><span class="p">)</span>
+		<span class="n">cam_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+		<span class="k">del</span> <span class="n">cam_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO - CameraManager] &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; has been removed&quot;</span><span class="p">)</span>
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span> <span class="o">+</span> <span class="s1">&#39;saved_cameras.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+		<span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">cam_dict</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+		<span class="n">window</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+		<span class="k">return</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
