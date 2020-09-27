@@ -28,21 +28,24 @@ class Stream:
 	"""
 	cap = cv2.VideoCapture()
 
-	def __init__(self, src=''):
+	def __init__(self, src='', test_source = False):
 		global cap
 		self.src = src
 
-		if src == '0' or src == ':@0:': #Enable webcam support
-			self.cap = cv2.VideoCapture(0)
+		if not test_source:
+			if src == '0' or src == ':@0:': #Enable webcam support
+				self.cap = cv2.VideoCapture(0)
+			else:
+				rtsp_string = 'rtsp://' + src + '/videoMain'
+				self.cap = cv2.VideoCapture(rtsp_string)
 		else:
-			rtsp_string = 'rtsp://' + src + '/videoMain'
-			self.cap = cv2.VideoCapture(rtsp_string)
+			self.cap = cv2.VideoCapture(src)
 
 	def get_stream(self):
 		if self.src == '':
 			return False
 		else:
-			return self.
+			return self.cap
 
 # === MOTION DETECTOR ===
 
@@ -67,7 +70,7 @@ class MotionDetector:
 		ret, frame = self.Stream.get_stream().read()
 
 		if not ret: #Check that a frame is availible
-			return
+			return False
 
 		frame = imutils.resize(frame, self.width)
 		fg_mask = self.fg_detect.apply(frame)
@@ -85,6 +88,8 @@ class MotionDetector:
 			img_name = self.filepath + self.name + " - " + datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p") + '.jpg'
 			cv2.imwrite(img_name, frame) #Saving
 			print("[INFO - MotionDetector] Motion detected on " + self.name + ", frame saved")
+
+		return True
 
 class CameraManager:
 
