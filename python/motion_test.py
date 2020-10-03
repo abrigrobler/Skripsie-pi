@@ -1,17 +1,14 @@
 
-from components import MotionDetector, Stream, CameraManager
+from components import MotionDetector, MotionDetector2, Stream, CameraManager, HumanDetector
 
 filepath = '../bin/saved_images/'
-src = '0'
-name = 'Webcam'
-min_area = 2000
+min_area = 500
 
-MD = MotionDetector(stream = Stream(src = '../bin/test_video.mov', test_source = True), name = 'test_video', min_area = min_area, filepath = filepath)
+MD = MotionDetector2(stream = Stream(src = 's_cam:skripsie_cam@10.10.10.101:88/videoMain', test_source = False), name = 'long_test', min_area = min_area, filepath = filepath)
 
 while(True):
-	if not MD.process_single_frame():
-		print("Video finished")
-		break
+	MD.process_single_frame()
+
 
 '''
 cam_list = CameraManager.list_cameras('../bin/')

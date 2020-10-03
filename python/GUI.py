@@ -47,11 +47,11 @@ def show_frame():
 	'''
 	btn_stream["state"] = "disabled"
 	btn_stream["text"] = "streaming..."
-	ret, frame = default_stream.get_stream().read()
-	width  = default_stream.get_stream().get(cv2.CAP_PROP_FRAME_WIDTH)  # float
-	height = default_stream.get_stream().get(cv2.CAP_PROP_FRAME_HEIGHT) # float
+	frame = default_stream.get_stream()
+	height, width, _ = frame.shape
+
 	div_factor = 2
-	if ret:
+	if frame is not None:
 		#frame = cv2.flip(frame, 1)
 		frame = cv2.resize(frame, (int(width/div_factor),int(height/div_factor)))
 		cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
@@ -116,9 +116,9 @@ def test_stream(label, src):
 	Ensures that the provided information successfully connects to a camera by testing the 'ret' value from cv2.read()
 	'''
 	t_stream = Stream(src = src)
-	ret, _ = t_stream.get_stream().read()
+	ret = t_stream.get_stream()
 	status = ''
-	if ret:
+	if ret is not None:
 		status = 'Connection success, a stream is available: ' + src
 	else:
 		status = 'Stream not available: ' + src
