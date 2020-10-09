@@ -35,7 +35,7 @@ while(True):
 	fg_mask = fg_detect.apply(frame)
 
 	#fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel) #Remove noise
-	fg_mask = cv2.medianBlur(fg_mask, 21)
+	fg_mask = cv2.medianBlur(fg_mask, 21q)
 
 	cnts = cv2.findContours(fg_mask.copy(), cv2.RETR_EXTERNAL,
 		cv2.CHAIN_APPROX_SIMPLE)

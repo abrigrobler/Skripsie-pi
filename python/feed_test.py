@@ -1,7 +1,7 @@
 
-from components import MotionDetector, Stream, CameraManager, HumanDetector
+from components import MotionDetector, Stream, CameraManager, HumanDetector, SimilarityDetector2
 
-test = HumanDetector(work_in_dir = '../bin/saved_images', interval = 0.5)
+test = SimilarityDetector2(work_in_dir = '../bin/saved_images', interval = 2)
 
 while(True):
-	test.detect_and_filter()
+	test.match_and_filter()

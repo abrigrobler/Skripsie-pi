@@ -24,7 +24,7 @@ def list_cameras(file_path):
 
 	if not os.path.isfile(file_path):
 		print('[ERROR] The file {} is corrupted or does not exist'.format(file_path))
-		return null
+		return None
 
 	with open(file_path) as fp:
 		for line in fp:
@@ -55,8 +55,8 @@ def open_stream(ip):
 			cv2.imshow('Foscam_01', img)
 			#print("[WARNING] Feed not available")
 		else:
-			break
 			print('[ERROR] Stream not available')
+			break
 
 		key = cv2.waitKey(1) & 0xFF
 		# if the `q` key is pressed, break from the loop
