@@ -4,7 +4,7 @@ import imutils
 import cv2
 
 filepath = '../bin/saved_images/'
-min_area = 1250
+min_area = 1000
 
 MD = MotionDetectorLFR(stream = Stream(src = 's_cam:skripsie_cam@10.10.10.101:88/videoMain', test_source = False), name = 'LFR_test', min_area = min_area, filepath = filepath)
 #SD = SimilarityDetector(stream = Stream(src = 's_cam:skripsie_cam@10.10.10.101:88/videoMain', test_source = False), name = 'first_sim_test', filepath = filepath)

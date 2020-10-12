@@ -20,6 +20,7 @@ import imutils
 from imutils.object_detection import non_max_suppression
 import threading
 from threading import Lock
+import glob
 
 # === STREAM ====
 
@@ -143,6 +144,9 @@ class MotionDetectorLFR:
 
 	"""
 	This class will hold a single stream, and perform background subtraction on the stream. Images on which motion are detected will be saved.
+	In addition, the frame rate is forced to 1 frame per second. This is done in order to lighten the processing load,
+	and also under the assumption that no details will be misssed with a low framerate. A lower framerate also helps
+	to reduce the number of images saved by the algorithm.
 	"""
 	frame = 0
 
@@ -334,6 +338,8 @@ class MotionDetector2:
 
 class HumanDetector:
 
+	first_pass_completed = False
+
 	def __init__(self, work_in_dir, interval):
 		'''
 		work_in_dir : path to the directory in which the class must find images
@@ -353,11 +359,14 @@ class HumanDetector:
 		'''
 		Perform human detection in all saved images using Histograms of Oriented Gradients for Human Detection
 		'''
-
+		
 		avg_time = 0
 
-		if (time.time() - self.last_check_time < self.interval) or self.imgs_in_dir == len(os.listdir(self.wid)): #Check that time of interval has passed
-			return
+		if self.first_pass_completed:
+			if (time.time() - self.last_check_time < self.interval) or self.imgs_in_dir == len(os.listdir(self.wid)): #Check that time of interval has passed
+				return
+
+		self.first_pass_completed = True
 
 		print("[INFO - HumanDetector] Starting detection and filtering of saved images...\n")
 
@@ -403,7 +412,7 @@ class HumanDetector:
 				filename = img_name[img_name.rfind("/") + 1:]
 				if len(pick) > 0:
 					id_positives = id_positives + 1
-					os.rename("../bin/saved_images/" + img_name, "../bin/images_of_interest/" + img_name) #Move the image
+					os.rename("../bin/saved_images/" + img_name, "../bin/human_images/" + img_name) #Move the image
 					#cv2.imshow('Detection', image)
 					#cv2.waitKey(0)
 					if img_name.startswith('person'):
@@ -423,85 +432,16 @@ class HumanDetector:
 		avg_time = avg_time/imgs_processed
 
 		print("\n[TESTING] Processing of this dataset took {} second, on average, per image".format(avg_time))
-		print("[TESTING] A total of {} positives were identified from {} images".format(id_positives, imgs_processed))
-		print("[TESTING] {} of the images were correctly identified as positive".format(ac_positives))
+		print("[TESTING] A total of {} negatives were identified from {} images".format(id_positives, imgs_processed))
 
 # === SIMILARITY DETECTOR ===
 
 class SimilarityDetector:
-	'''
-	This class is extremely experimental. The idea is to compare the incoming frame with the previous one, and return a % similarity
-	A threshold for this similarity percentage will then be determined. Only frames that exceed this threshold will be saved, since we can then
-	assume that there is a major difference between the previous and current frame. 
-
-	In addition, reducing the frame rate of the incoming stream might relieve some of the processing stress on the RPi, and provide another parameter
-	that can be tested. This will also make the HumanDetector more reduntant, but the algorithm can still be used in the background nontheless.
-	'''
-	prev_frame = None
-
-	def __init__(self, stream, name, filepath, frame_rate = 1, similarity_thresh = 89):
-		self.Stream = stream
-		self.name = name
-		self.filepath = filepath
-		self.frame_rate = frame_rate
-		self.start_time = time.time()
-		self.similarity_thresh = similarity_thresh
-		print("[DEBUG - SimilarityDetector] SD initiated")
-
-	def determine_similarity(self, prev_frame, current_frame):
-		# FROM https://stackoverflow.com/questions/11541154/checking-images-for-similarity-with-opencv
-
-		first_image_hist = cv2.calcHist([prev_frame], [0], None, [256], [0, 256])
-		second_image_hist = cv2.calcHist([current_frame], [0], None, [256], [0, 256])
-
-		img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_BHATTACHARYYA)
-		#img_template_probability_match = cv2.matchTemplate(prev_frame, current_frame, cv2.TM_CCOEFF_NORMED)[0][0]
-
-		# taking only 10% of histogram diff, since it's less accurate than template method
-		commutative_image_match = (1 - img_hist_diff)*100
-		print("[DEBUG - SimilarityDetector] Image similarity: ", commutative_image_match)
-		return commutative_image_match
-
-	def process_frame(self):
-
-		current_frame = self.Stream.get_stream()
-
-		if current_frame is None: #Check that a frame is available
-			return None
-
-		if self.prev_frame is None: #Set the first comparison frame, do not compare if it has not been set
-			print("[DEBUG - SimilarityDetector] initiated first frame")
-			self.prev_frame = current_frame
-			return None
-
-		if time.time() - self.start_time > 1./self.frame_rate: #Reduce the rate at which frames are processed
-			'''
-			If frames are processed too frequently, the similarities will simply be too small to actually pick up. Therefore,
-			the framerate is reduced here. It might even be reduced further, depending on experimental results
-			'''
-			SIM = self.determine_similarity(self.prev_frame, current_frame)
-
-			if SIM < self.similarity_thresh:
-				'''
-				Save the image if the similarity is less than the set threshold
-				''' 
-				print("[DEBUG - SimilarityDetector] Image below threshold found")
-				img_name = self.filepath + self.name + " - " + datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p") + '.jpg'
-				cv2.imwrite(img_name, current_frame) #Save the original frame
-
-			self.start_time = time.time()
-			p = self.prev_frame # Copy the previous frame
-			self.prev_frame = current_frame
-			return p, current_frame
-
-# === SIMILARITY DETECTOR 2 ===
-
-class SimilarityDetector2:
 
 	first_image = None
 	first_pass_completed = False
 
-	def __init__(self, work_in_dir, interval, similarity_thresh = 80):
+	def __init__(self, work_in_dir, interval, similarity_thresh = 92):
 		'''
 		work_in_dir : path to the directory in which the class must find images
 		interval : interval between directory checks, in minutes
@@ -515,14 +455,14 @@ class SimilarityDetector2:
 	def determine_similarity(self, prev_frame, current_frame):
 		# FROM https://stackoverflow.com/questions/11541154/checking-images-for-similarity-with-opencv
 
-		first_image_hist = cv2.calcHist([prev_frame], [0], None, [256], [0, 256])
-		second_image_hist = cv2.calcHist([current_frame], [0], None, [256], [0, 256])
+		#first_image_hist = cv2.calcHist([prev_frame], [0], None, [256], [0, 256])
+		#second_image_hist = cv2.calcHist([current_frame], [0], None, [256], [0, 256])
 
-		img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_CORREL)
-		#img_template_probability_match = cv2.matchTemplate(prev_frame, current_frame, cv2.TM_CCOEFF_NORMED)[0][0]
+		#img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_CORREL)
+		img_template_probability_match = cv2.matchTemplate(prev_frame, current_frame, cv2.TM_CCOEFF_NORMED)[0][0]
 
 		# taking only 10% of histogram diff, since it's less accurate than template method
-		commutative_image_match = (img_hist_diff)*100
+		commutative_image_match = (img_template_probability_match)*100
 		print("[DEBUG - SimilarityDetector] Image similarity: ", commutative_image_match)
 		return commutative_image_match
 
@@ -532,10 +472,9 @@ class SimilarityDetector2:
 		'''
 
 		#avg_time = 0
-
-		#if self.first_pass_completed:
-		if (time.time() - self.last_check_time < self.interval) or self.imgs_in_dir == len(os.listdir(self.wid)) or len(os.listdir(self.wid)) < 2: #Check that time of interval has passed
-			return
+		if self.first_pass_completed:
+			if (time.time() - self.last_check_time < self.interval) or self.imgs_in_dir == len(os.listdir(self.wid)) or len(os.listdir(self.wid)) < 2: #Check that time of interval has passed
+				return
 
 		print("[INFO - SimilarityDetector2] Starting matching and filtering of saved images...\n")
 
@@ -543,41 +482,99 @@ class SimilarityDetector2:
 		self.imgs_in_dir = len(os.listdir(self.wid)) #Updates the number of images in the directory in the latest check.
 		# These two variables help to optimise the filtering process by only performing the process at specific intervals, and also only when
 		# the number of images in the indicated directory has changed
+		files = glob.glob(self.wid + '/*.jpg')
+		files.sort(key=os.path.getmtime)
 
+		for img_name in files:
+
+			if self.first_image is None:
+						self.first_image = cv2.imread(img_name)
+						self.first_pass_completed = True
+						continue
+			
+			image = cv2.imread(img_name)
+
+			SIM = self.determine_similarity(self.first_image, image)
+
+			if SIM > self.similarity_thresh:
+				'''
+				Save the image if the similarity is less than the set threshold
+				''' 
+				print("[DEBUG - SimilarityDetector2] Image below threshold found")
+				os.rename(img_name, "../bin/storage/" + img_name[19:]) #Move the image
+
+			self.first_image = image
+
+
+# === SIMILARITY DETECTOR 2 ===
+
+class SimilarityDetector2:
+
+	first_image = None
+	first_pass_completed = False
+
+	def __init__(self, work_in_dir, interval, similarity_thresh = 93):
 		'''
-		# For testing:
-		id_positives = 0
-		ac_positives = 0
-		imgs_processed = 0
+		work_in_dir : path to the directory in which the class must find images
+		interval : interval between directory checks, in minutes
 		'''
+		self.last_check_time = time.time()
+		self.wid = work_in_dir
+		self.interval = interval*60
+		self.imgs_in_dir = 0
+		self.similarity_thresh = similarity_thresh
 
-		for img_name in os.listdir(self.wid):
+	def determine_similarity(self, prev_frame, current_frame):
+		# FROM https://stackoverflow.com/questions/11541154/checking-images-for-similarity-with-opencv
+		prev_frame = imutils.resize(prev_frame, 700)
+		current_frame = imutils.resize(current_frame, 700)
 
-			if img_name and not img_name.startswith('.'): #ignore metadata, corrupt files, etc
+		first_image_hist = cv2.calcHist([prev_frame], [0], None, [256], [0, 256])
+		second_image_hist = cv2.calcHist([current_frame], [0], None, [256], [0, 256])
 
-				if self.first_image is None:
-					self.first_image = cv2.imread(os. path. join(self.wid,img_name))
-					self.first_pass_completed = True
-					continue
+		img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_CORREL)
+		img_template_probability_match = cv2.matchTemplate(prev_frame, current_frame, cv2.TM_CCOEFF_NORMED)[0][0]
 
-				#imgs_processed = imgs_processed + 1
+		commutative_image_match = (0.5*img_template_probability_match + 0.5*img_hist_diff)*100
+		print("[DEBUG - SimilarityDetector] Image similarity: ", commutative_image_match)
+		return commutative_image_match
 
-				#print("\n[INFO] Img name : {}".format(img_name))	
+	def match_and_filter(self):
 
-				#cur_time = time.time()
+		#avg_time = 0
+		if self.first_pass_completed:
+			if (time.time() - self.last_check_time < self.interval) or self.imgs_in_dir == len(os.listdir(self.wid)) or len(os.listdir(self.wid)) < 2: #Check that time of interval has passed
+				return
 
-				image = cv2.imread(os. path. join(self.wid,img_name))
+		print("[INFO - SimilarityDetector2] Starting matching and filtering of saved images...\n")
 
-				SIM = self.determine_similarity(self.first_image, image)
+		self.last_check_time = time.time() #Update the last checked time
+		self.imgs_in_dir = len(os.listdir(self.wid)) #Updates the number of images in the directory in the latest check.
+		# These two variables help to optimise the filtering process by only performing the process at specific intervals, and also only when
+		# the number of images in the indicated directory has changed
+		files = glob.glob(self.wid + '/*.jpg')
+		files.sort(key=os.path.getmtime)
 
-				if SIM < self.similarity_thresh:
-					'''
-					Save the image if the similarity is less than the set threshold
-					''' 
-					print("[DEBUG - SimilarityDetector2] Image below threshold found")
-					os.rename("../bin/saved_images/" + img_name, "../bin/images_of_interest/" + img_name) #Move the image
+		for img_name in files:
 
-				self.first_image = image
+
+			if self.first_image is None:
+						self.first_image = cv2.imread(img_name)
+						self.first_pass_completed = True
+						continue
+			
+			image = cv2.imread(img_name)
+
+			SIM = self.determine_similarity(self.first_image, image)
+
+			if SIM > self.similarity_thresh:
+				'''
+				Save the image if the similarity is less than the set threshold
+				''' 
+				print("[DEBUG - SimilarityDetector2] Image below threshold found")
+				os.rename(img_name, "../bin/storage/" + img_name[19:]) #Move the image
+
+			self.first_image = image
 
 				#avg_time = avg_time + time.time() - cur_time
 
@@ -588,6 +585,92 @@ class SimilarityDetector2:
 		print("[TESTING] A total of {} positives were identified from {} images".format(id_positives, imgs_processed))
 		print("[TESTING] {} of the images were correctly identified as positive".format(ac_positives))
 		'''
+
+# === SIMILARITY DETECTOR 3 ===
+
+class SimilarityDetector3:
+	'''
+	The third version of the SD actually compares each image to all other images in the directory
+	The problem here is that it takes way too long, and simply yields bad results.
+	'''
+
+
+	first_image = None
+	first_pass_completed = False
+
+	def __init__(self, work_in_dir, interval, similarity_thresh = 93):
+		'''
+		work_in_dir : path to the directory in which the class must find images
+		interval : interval between directory checks, in minutes
+		'''
+		self.last_check_time = time.time()
+		self.wid = work_in_dir
+		self.interval = interval*60
+		self.imgs_in_dir = 0
+		self.similarity_thresh = similarity_thresh
+
+		self.files = glob.glob(self.wid + '/*.jpg')
+		self.files.sort(key=os.path.getmtime)
+
+	def determine_similarity(self, prev_frame, current_frame):
+		# FROM https://stackoverflow.com/questions/11541154/checking-images-for-similarity-with-opencv
+
+		first_image_hist = cv2.calcHist([prev_frame], [0], None, [256], [0, 256])
+		second_image_hist = cv2.calcHist([current_frame], [0], None, [256], [0, 256])
+
+		img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_CORREL)
+		#img_template_probability_match = cv2.matchTemplate(prev_frame, current_frame, cv2.TM_CCOEFF_NORMED)[0][0]
+
+		# taking only 10% of histogram diff, since it's less accurate than template method
+		commutative_image_match = (img_hist_diff)*100
+		#print("[DEBUG - SimilarityDetector] Image similarity: ", commutative_image_match)
+		return commutative_image_match
+
+	def match_and_filter(self):
+		start_time = time.time()
+		'''
+		Perform human detection in all saved images using Histograms of Oriented Gradients for Human Detection
+		'''
+
+		#avg_time = 0
+		if self.first_pass_completed:
+			if (time.time() - self.last_check_time < self.interval) or self.imgs_in_dir == len(os.listdir(self.wid)) or len(os.listdir(self.wid)) < 2: #Check that time of interval has passed
+				return
+
+		#print("[INFO - SimilarityDetector2] Starting matching and filtering of saved images...\n")
+
+		self.first_pass_completed = True
+
+		self.last_check_time = time.time() #Update the last checked time
+		self.imgs_in_dir = len(os.listdir(self.wid)) #Updates the number of images in the directory in the latest check.
+		# These two variables help to optimise the filtering process by only performing the process at specific intervals, and also only when
+		# the number of images in the indicated directory has changed
+		
+
+		iter = 0
+		for img_name in self.files:
+			print("CHECKING IMAGE", img_name)
+			iter = iter + 1
+			
+			for comp_image_name in self.files:
+
+				if comp_image_name == img_name:
+					continue
+			
+				image_current = cv2.imread(img_name)
+				image_compare = cv2.imread(comp_image_name)
+
+				SIM = self.determine_similarity(image_current, image_compare)
+
+				if SIM > self.similarity_thresh:
+					'''
+					Save the image if the similarity is less than the set threshold
+					''' 
+					print("[DEBUG - SimilarityDetector3] Similar image found")
+					os.rename(comp_image_name, "../bin/storage/" + comp_image_name[19:]) #Move the image
+					self.files.remove(comp_image_name)
+
+		print("[INFO - SimilarityDetector3] Match and filter completed. Time:", time.time() - start_time)
 
 # === CAMERA MANAGER ===
 
