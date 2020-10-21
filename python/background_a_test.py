@@ -1,7 +1,9 @@
 
-from components import MotionDetector, Stream, CameraManager, HumanDetector, SimilarityDetector, SimilarityDetector2, SimilarityDetector3
+from components import MotionDetector, Stream, CameraManager, HumanDetector2, SimilarityDetector, SimilarityDetector2, SimilarityDetector3, StorageManager
 
-test = SimilarityDetector2(work_in_dir = '../bin/saved_images', interval = 60)
+test = StorageManager(work_in_dir='../bin/storage', interval=0.1)
 
 while(True):
-	test.match_and_filter()
+    test.reduce_files()
+
+
