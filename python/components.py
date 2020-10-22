@@ -19,7 +19,7 @@ import numpy as np
 import imutils
 from imutils.object_detection import non_max_suppression
 import threading
-from threading import Lock
+from threading import Lock, Thread
 import glob
 import shutil
 import random
@@ -41,8 +41,10 @@ class Stream:
 
     A threading fix has been implemented to try and fix this.
     Seems to be working now, for the most part at least.
+
+    In addition, the stream needs to be refreshed at some points in time to resync the source and processor
     """
-    cap = cv2.VideoCapture()
+    cap: cv2.VideoCapture()
 
     # From https://stackoverflow.com/questions/51722319/skip-frames-and-seek-to-end-of-rtsp-stream-in-opencv
 
@@ -78,7 +80,7 @@ class Stream:
 
     def get_stream(self):
         '''
-        Returns the OpenCV VideoCapture object if a valid source is provided, and if a frame is available
+        Returns a frame if a valid source is provided, and if a frame is available
         '''
         if (self.last_ready is not None) and (self.last_frame is not None):
             if self.src == '':
@@ -88,6 +90,20 @@ class Stream:
                 return self.last_frame.copy()
         else:
             return None
+
+    def refresh_stream(self):
+        self.cap = None
+        time.sleep(2)
+        if self.src == '0' or self.src == ':@0:':  # Enable webcam support
+            self.cap = cv2.VideoCapture(0)
+        else:
+            rtsp_string = 'rtsp://' + self.src
+            self.cap = cv2.VideoCapture(rtsp_string)
+
+    def release_stream(self):
+        self.cap.release()
+        self.cap = None
+
 
 # === MOTION DETECTOR ===
 
@@ -158,7 +174,7 @@ class MotionDetectorLFR:
     frame = 0
 
     def __init__(self, stream, name, filepath, min_area, width=800, initial_frame_skip=20):
-        self.refresh_rate = 5*60
+        self.refresh_rate = 4*60
         self.last_check_time = time.time()
         self.Stream = stream
         self.stream_data = stream
@@ -214,11 +230,12 @@ class MotionDetectorLFR:
             # cv2.imshow("Frame Delta", fg_mask)
             # cv2.imshow("Security Feed", frame)
             # print("[INFO - MotionDetector] Motion detected on " + self.name + ", frame saved")
-        
+
         if time.time() - self.last_check_time > self.refresh_rate:
-            #Refresh the incoming stream to avoid getting too far out of sync
-            self.Stream = None
-            self.Stream = self.stream_data
+            # Refresh the incoming stream to avoid getting too far out of sync
+            print("[INFO - MotionDetector]Refreshing stream data on " + self.name)
+            self.Stream.refresh_stream()
+            self.last_check_time = time.time()
 
         # return True
 
@@ -462,7 +479,6 @@ class HumanDetector:
 
 # === HUMAN DETECTOR 2===
 
-
 class HumanDetector2:
     '''
     Instead of using HOG, this second implementation of a human detector will use a HAAR cascade classifier
@@ -583,10 +599,10 @@ class HumanDetectorUtil:
         bodies = self.classifier.detectMultiScale(gray)
 
         (rects, weights) = self.hog.detectMultiScale(image, winStride=(4, 4),
-                                                             padding=(8, 8), scale=1.13)
+                                                     padding=(8, 8), scale=1.13)
 
         pick = non_max_suppression(
-                    rects, probs=None, overlapThresh=0.65)
+            rects, probs=None, overlapThresh=0.65)
 
         if len(bodies) > 0 or len(pick) > 0:
             return True
@@ -678,7 +694,7 @@ class SimilarityDetector:
 class SimilarityDetector2:
 
     first_image = None
-    first_pass_completed = False
+    first_pass_completed = True
 
     def __init__(self, work_in_dir, interval, similarity_thresh=93):
         '''
@@ -866,9 +882,9 @@ class StorageManager:
     '''
     force_remove = False
     memory_flag: bool
-    first_pass_completed = False
+    first_pass_completed = True
 
-    def __init__(self, work_in_dir, interval, space=20, critical_space = 2):
+    def __init__(self, work_in_dir, interval, space=20, critical_space=2):
         '''
         work_in_dir : path to the directory in which the class must find images
         interval : interval between directory checks, in minutes
@@ -881,47 +897,113 @@ class StorageManager:
         self.required_space = space
         self.critical_space = critical_space
         self.detector_util = HumanDetectorUtil()
-        
+
     def check_free_space(self):
         total, used, free = shutil.disk_usage("/")
-        print ("Total free space on system: %d GiB" % (free // (2**30)))
+        #print ("Total free space on system: %d GiB" % (free // (2**30)))
         return (free // (2**30))
 
     def reduce_files(self):
-        start_time = time.time()
         '''
         Perform human detection in all saved images using Histograms of Oriented Gradients for Human Detection
         '''
-        if self.check_free_space() < self.required_space:
+        space = self.check_free_space()
+        if space < self.required_space:
             self.memory_flag = True
         else:
             self.memory_flag = False
-            
-        if self.check_free_space() < self.critical_space:
+
+        if space < self.critical_space:
             self.force_remove = True
         else:
             self.force_remove = False
-        
+
         if self.first_pass_completed:
             # Check that time of interval has passed
             if (time.time() - self.last_check_time < self.interval) and not self.memory_flag:
                 return
-        
+
         print("[INFO] Cleaning memory")
-        
-        rand_img = random.choice(self.files)
-        img = cv2.imread(rand_img)
-        
-        if self.detector_util.detect(img) and not force_remove:
-            return None
-        else:
-            os.remove(rand_img)
-            self.files.remove(rand_img)
-            
-            
-        
+
+        self.files = glob.glob(self.wid + '/*.jpg')
+
+        if len(self.files) > 10:
+            rand_img = random.choice(self.files)
+            img = cv2.imread(rand_img)
+
+            if self.detector_util.detect(img) and not self.force_remove:
+                return None
+            else:
+                os.remove(rand_img)
+                self.files.remove(rand_img)
+
+        self.last_check_time = time.time()
 
 
+class SystemUnit:
+
+    MD_THREAD: Thread
+    BG_THREAD: Thread
+
+    def __init__(self, stream, required_space=4, critical_space=2, filter_interval=1, min_area=1250):
+        check_path = str('../bin/' + stream[0] + '/')
+
+        # Create a working directory if one does not exist
+        if not os.path.exists(check_path):
+            os.mkdir(check_path)
+        self.wid = check_path + '/'
+
+        self.md = MotionDetectorLFR(stream=Stream(
+            src=stream[1], test_source=False), name=stream[0], min_area=min_area, filepath=self.wid)
+        self.sim_detector = SimilarityDetector2(
+            work_in_dir=self.wid, interval=filter_interval, similarity_thresh=93)
+
+    def stream_and_detect(self):
+        while True:
+            self.md.process_single_frame()
+
+    def background_operations(self):
+        while True:
+            self.sim_detector.match_and_filter()
+
+    def run(self):
+        self.MD_THREAD = Thread(target=self.stream_and_detect)
+        self.BG_THREAD = Thread(target=self.background_operations)
+        print("Starting threads")
+        self.BG_THREAD.daemon = True
+        self.MD_THREAD.start()
+        self.BG_THREAD.start()
+
+
+class SystemMotionDetection:
+
+    def start(min_area = 1250):
+        MD_list = []
+        cam_list = CameraManager.list_cameras('../bin/')
+
+        for c in cam_list:
+            MD_list.append(MotionDetectorLFR(stream=Stream(
+                c[1]), name=c[0], min_area=min_area, filepath=str('../bin/' + c[0] + '/')))
+
+        while(True):
+            for MD in MD_list:
+                MD.process_single_frame()
+
+
+class SystemFiltering:
+
+    def start(filter_interval=10):
+
+        SD_list = []
+        cam_list = CameraManager.list_cameras('../bin/')
+
+        for c in cam_list:
+            SD_list.append(SimilarityDetector2(work_in_dir=str(
+                '../bin/' + c[0] + '/'), interval=filter_interval, similarity_thresh=93))
+
+        while(True):
+            for SD in SD_list:
+                SD.match_and_filter()
 
 # === CAMERA MANAGER ===
 

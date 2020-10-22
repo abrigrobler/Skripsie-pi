@@ -15,6 +15,8 @@ from PIL import Image, ImageTk
 from components import Stream, CameraManager
 import os
 import sys
+import time
+#from surveillance_system import SurveillanceSystem
 
 
 '''
@@ -116,6 +118,8 @@ def test_stream(label, src):
 	Ensures that the provided information successfully connects to a camera by testing the 'ret' value from cv2.read()
 	'''
 	t_stream = Stream(src = src)
+	status = 'Testing connection...'
+	time.sleep(1000)
 	ret = t_stream.get_stream()
 	status = ''
 	if ret is not None:
@@ -179,14 +183,11 @@ def add_camera():
 
 # General, app specific functions
 
-def updateCalibrationStatus():
-	'''
-	Not currently used.
-	'''
-	if calibrated:
-		lbl_calibration_status.config(text = "Calibration status: Calibrated")
-	else:
-		lbl_calibration_status.config(text = "Calibration status: Not calibrated")
+'''
+def run_system():
+    s_system = SurveillanceSystem()
+    s_system.run()
+'''
 
 '''
 -----------------------------------------------
@@ -204,7 +205,7 @@ lbl_default = tkinter.Label(window, text = "Select a camera to view stream")
 btn_select = tkinter.Button(window, text = "Select a stream", command = show_cameras)
 btn_add = tkinter.Button(window, text = "Add a camera", command = add_camera)
 btn_detele = tkinter.Button(window, text = "Delete a camera", command = delete_cameras)
-btn_calibrate = tkinter.Button(window, text = "Calibrate system")
+btn_calibrate = tkinter.Button(window, text = "Run")
 btn_stream = tkinter.Button(window, text = "Show stream", command = show_frame)
 
 video_stream = tkinter.Label(window)
