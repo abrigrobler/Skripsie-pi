@@ -478,7 +478,7 @@ class SystemFiltering:
         cam_list = CameraManager.list_cameras('../bin/')
 
         for c in cam_list:
-            SD_list.append(SimilarityDetector2(work_in_dir=str(
+            SD_list.append(SimilarityDetector(work_in_dir=str(
                 '../bin/' + c[0] + '/'), interval=filter_interval, similarity_thresh=93))
 
         while(True):
