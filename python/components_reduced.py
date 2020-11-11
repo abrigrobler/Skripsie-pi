@@ -226,7 +226,7 @@ class HumanDetectorUtil:
 class SimilarityDetector:
 
     first_image = None
-    first_pass_completed = True
+    first_pass_completed = False
 
     def __init__(self, work_in_dir, interval, similarity_thresh=93):
         '''
@@ -254,8 +254,7 @@ class SimilarityDetector:
         img_template_probability_match = cv2.matchTemplate(
             prev_frame, current_frame, cv2.TM_CCOEFF_NORMED)[0][0]
 
-        commutative_image_match = (
-            0.5*img_template_probability_match + 0.5*img_hist_diff)*100
+        commutative_image_match = (0.2*img_template_probability_match + 0.8*img_hist_diff)*100
         print("[DEBUG - SimilarityDetector] Image similarity: ",
               commutative_image_match)
         return commutative_image_match
@@ -294,9 +293,9 @@ class SimilarityDetector:
                 '''
                 Save the image if the similarity is less than the set threshold
                 '''
-                print("[DEBUG - SimilarityDetector] Image below threshold found")
+                print("[DEBUG - SimilarityDetector] Image above threshold found")
                 os.rename(img_name, "../bin/storage/" +
-                          img_name[19:])  # Move the image
+                          img_name[12:])  # Move the image
 
             self.first_image = image
 

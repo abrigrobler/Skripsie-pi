@@ -113,14 +113,15 @@ def update_stream(window, source):
 	default_stream  = Stream(src = source)
 	window.destroy()
 
-def test_stream(label, src):
+def test_stream(label, src, timeout = 7):
 	'''
 	Ensures that the provided information successfully connects to a camera by testing the 'ret' value from cv2.read()
 	'''
+	start_time = time.time()
 	t_stream = Stream(src = src)
-	status = 'Testing connection...'
-	time.sleep(1000)
-	ret = t_stream.get_stream()
+	ret = None
+	while time.time() - start_time <= timeout:
+		ret = t_stream.get_stream()
 	status = ''
 	if ret is not None:
 		status = 'Connection success, a stream is available: ' + src
@@ -198,7 +199,6 @@ CONSTRUCTION OF THE MAIN WINDOW
 # Main window elements
 
 # Labels
-lbl_calibration_status = tkinter.Label(window, text = "Calibration status: Not calibrated")
 lbl_default = tkinter.Label(window, text = "Select a camera to view stream")
 
 # Buttons
@@ -216,7 +216,6 @@ btn_stream.grid(row=0, column = 1)
 btn_add.grid(row = 0, column = 2)
 btn_detele.grid(row = 0, column = 3)
 btn_calibrate.grid(row = 0, column = 4)
-lbl_calibration_status.grid(row = 2, columnspan = 2, sticky = 'W')
 lbl_default.grid(row = 3, columnspan = 2, sticky = 'W')
 video_stream.grid(columnspan = 5, sticky = 'W')
 
